@@ -1,4 +1,3 @@
-
 """The data the application works with."""
 
 from dataclasses import dataclass

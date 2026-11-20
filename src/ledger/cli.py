@@ -1,4 +1,3 @@
-
 """The command line: reads the arguments, calls storage and reports, prints."""
 
 import argparse

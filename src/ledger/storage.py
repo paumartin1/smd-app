@@ -1,4 +1,3 @@
-
 """Reading transactions from where they are stored."""
 
 import csv
