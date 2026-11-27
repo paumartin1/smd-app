@@ -57,21 +57,37 @@ def import_csv(session: Session, path: Path) -> int:
     return len(transactions)
 
 
-def load_transactions(session: Session) -> list[Transaction]:
-    """All the transactions in the database, oldest first."""
-    query = select(TransactionRow).order_by(TransactionRow.date, TransactionRow.id)
-    rows = session.scalars(query)
+def to_transaction(row: TransactionRow) -> Transaction:
+    """The Transaction stored in one row of the table `transactions`."""
+    return Transaction(
+        date=row.date,
+        account=row.account.name,
+        description=row.description,
+        category=row.category,
+        amount=row.amount,
+        id=row.id,
+    )
 
-    return [
-        Transaction(
-            date=row.date,
-            account=row.account.name,
-            description=row.description,
-            category=row.category,
-            amount=row.amount,
-        )
-        for row in rows
-    ]
+
+def load_transactions(
+    session: Session, account: str | None = None, category: str | None = None
+) -> list[Transaction]:
+    """The transactions in the database, oldest first, of one account or category
+    if they are given."""
+    query = select(TransactionRow).order_by(TransactionRow.date, TransactionRow.id)
+    if account is not None:
+        query = query.join(Account).where(Account.name == account)
+    if category is not None:
+        query = query.where(TransactionRow.category == category)
+    return [to_transaction(row) for row in session.scalars(query)]
+
+
+def get_transaction(session: Session, transaction_id: int) -> Transaction | None:
+    """The transaction with this id, or None if there is none."""
+    row = session.get(TransactionRow, transaction_id)
+    if row is None:
+        return None
+    return to_transaction(row)
 
 
 def add_transaction(
@@ -81,23 +97,30 @@ def add_transaction(
     category: str,
     description: str,
     day: date,
-) -> None:
-    """Records one transaction in an existing account."""
+) -> Transaction:
+    """Records one transaction in an existing account, and returns it with its id."""
     account = find_account(session, account_name)
-
     if account is None:
         raise ValueError(f"there is no account called {account_name!r}")
-
     if amount != round(amount, 2):
         raise ValueError(f"{amount} has more than two decimals")
-
-    session.add(
-        TransactionRow(
-            date=day,
-            account=account,
-            description=description,
-            category=category,
-            amount=amount,
-        )
+    row = TransactionRow(
+        date=day,
+        account=account,
+        description=description,
+        category=category,
+        amount=amount,
     )
+    session.add(row)
     session.commit()
+    return to_transaction(row)
+
+
+def delete_transaction(session: Session, transaction_id: int) -> bool:
+    """Deletes the transaction with this id. Returns False if there is none."""
+    row = session.get(TransactionRow, transaction_id)
+    if row is None:
+        return False
+    session.delete(row)
+    session.commit()
+    return True
