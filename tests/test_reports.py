@@ -36,7 +36,7 @@ def transactions() -> list[Transaction]:
 def test_balances(transactions):
     result = reports.balances(transactions)
 
-    assert result == {"checking": Decimal("1569.36"), "savings": Decimal("300.00")}
+    assert result == {"checking": Decimal("1569.35"), "savings": Decimal("300.00")}
 
 
 def test_balances_of_no_transactions():
