@@ -5,6 +5,7 @@ description = "Balances and spending from a CSV file of transactions"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "fastapi[standard]>=0.165.0",
     "rich>=15.0.0",
     "sqlalchemy>=2.1.9",
 ]
